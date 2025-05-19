@@ -63,3 +63,24 @@ uv run streamlit run visualize_dataset.py \
 ### Example
 
 ![img](img/dataset_viewer.png)
+
+### Upload Dataset
+
+#### Acquire credentials
+
+```sh
+az login
+
+azcopy login --login-type azcli
+export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
+```
+
+#### Copy
+
+```sh
+azcopy copy \
+--recursive \
+datasets/installaprinter_20250519_164901 \
+https://magmardata.blob.core.windows.net/data/minibehavior/installaprinter \
+--dry-run
+```
