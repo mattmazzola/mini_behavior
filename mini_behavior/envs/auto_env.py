@@ -16,7 +16,7 @@ class AutoGenerateEnv(RoomGrid):
             mode='cartesian',
             scene_id='marple_0',
             initial_dict=None,
-            max_steps=1e5,
+            max_steps=int(1e5),
     ):
         self.mission = initial_dict["Grid"]["mission"]
 
@@ -182,7 +182,8 @@ class AutoGenerateEnv(RoomGrid):
 # non human input env
 register(
     id='MiniGrid-AutoGenerate-16x16-N2-v0',
-    entry_point='mini_behavior.envs:AutoGenerateEnv'
+    entry_point='mini_behavior.envs:AutoGenerateEnv',
+    kwargs={}
 )
 
 # human input env

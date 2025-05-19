@@ -1,0 +1,14 @@
+[project]
+name = "mini-behavior"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gym-minigrid==1.2.2",
+    "gymnasium==0.29.1",
+    "minigrid==2.3.1",
+    "opencv-python>=4.11.0.86",
+    "pytest>=8.3.5",
+    "streamlit>=1.45.1",
+]

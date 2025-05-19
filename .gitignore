@@ -8,3 +8,12 @@ trained_models
 build/*
 dist/*
 .idea/
+
+# Saved Demos
+demos/
+
+# Virutal Environments
+.venv
+
+# Datasets
+datasets/

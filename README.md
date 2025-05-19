@@ -1,5 +1,31 @@
 # Mini-BEHAVIOR
-Link to paper: https://arxiv.org/abs/2310.01824 
+Link to paper: https://arxiv.org/abs/2310.01824
+
+## Setup
+
+```sh
+uv sync
+```
+
+## Run Tests
+
+```sh
+uv run pytest -v
+```
+
+## Generate Dataset
+
+```sh
+uv run generate_dataset.py
+```
+
+
+## Visualize Dataset
+
+```sh
+uv run streamlit run visualize_dataset.py \
+-- datasets/installaprinter_20250519_162516/dataset.jsonl
+```
 
 ###  MiniGrid Implementation of BEHAVIOR Tasks 
 ![Screenshot](img/overview.png)
@@ -58,14 +84,14 @@ python train_rl_agent.py --task InstallingAPrinter
 
 * To collect human demonstrations, run:
 ```
-python manual_control.py --save true
+python manual_control.py --save
 ```
 * An example code for loading the demos is shown in scripts/load_demos.py
 
 ### Action Space Type
 Mini-BH supports two types of action spaces: cartesian and primitive. Environment names that ends with v0 correspond to 
 primitive actions, while v1 corresponds to cartesian actions. We recommend starting off with primitive actions due to 
-its  simplicity and efficiency.
+its simplicity and efficiency.
 
 ### File Descriptions 
 * **mini_behavior/actions.py**

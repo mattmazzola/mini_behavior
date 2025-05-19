@@ -62,7 +62,8 @@ class InstallingAPrinterEnv(RoomGrid):
 
 register(
     id='MiniGrid-InstallingAPrinter-16x16-N2-v0',
-    entry_point='mini_behavior.envs:InstallingAPrinterEnv'
+    entry_point='mini_behavior.envs:InstallingAPrinterEnv',
+    kwargs={"max_steps": 1000}
 )
 
 register(

@@ -1,0 +1,78 @@
+{
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils": {
+            "configureZshAsDefaultShell": true
+        },
+        "ghcr.io/devcontainers/features/nvidia-cuda:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/rust": {},
+        "ghcr.io/devcontainers/features/dotnet": {},
+        "ghcr.io/devcontainers/features/powershell": {},
+        "ghcr.io/devcontainers/features/github-cli": {},
+        "ghcr.io/devcontainers/features/azure-cli:1": {
+            "installBicep": true,
+        },
+        "ghcr.io/azure/azure-dev/azd:latest": {},
+        "ghcr.io/va-h/devcontainers-features/uv": {},
+        "ghcr.io/jckimble/devcontainer-features/ngrok": {},
+    },
+    "postCreateCommand": "bash ./.devcontainer/postCreateCommand.sh",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.analysis.autoImportCompletions": true,
+                "python.analysis.autoImportUserSymbols": true,
+                "python.linting.enabled": true,
+                "isort.check": true,
+                "dev.containers.copyGitConfig": true,
+            },
+            "extensions": [
+                "aaron-bond.better-comments",
+                "charliermarsh.ruff",
+                "eamodio.gitlens",
+                "EditorConfig.EditorConfig",
+                "foxundermoon.shell-format",
+                "GitHub.copilot",
+                "lehoanganh298.json-lines-viewer",
+                "mechatroner.rainbow-csv",
+                "mhutchie.git-graph",
+                "ms-dotnettools.dotnet-interactive-vscode",
+                "ms-python.debugpy",
+                "ms-python.isort",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "njpwerner.autodocstring",
+                "redhat.vscode-yaml",
+                "stkb.rewrap",
+                "tamasfe.even-better-toml",
+                "yzhang.markdown-all-in-one",
+            ]
+        }
+    },
+    "hostRequirements": {
+        "gpu": "optional"
+    },
+    "mounts": [
+        // Binds for blobfuse2 mounts
+        "type=bind,source=${localEnv:HOME}/mnt/echelondata_dev,target=/mnt/echelondata_dev",
+        "type=bind,source=${localEnv:HOME}/mnt/yuwanechelon_data,target=/mnt/yuwanechelon_data",
+        "type=bind,source=${localEnv:HOME}/mnt/vlpdatasets_data,target=/mnt/vlpdatasets_data",
+        "type=bind,source=${localEnv:HOME}/mnt/magmardata_data,target=/mnt/magmardata_data",
+        // Binds for shared data
+        "type=bind,source=/data,target=/data",
+    ],
+    "runArgs": [
+        "--gpus",
+        "all",
+        "--ipc",
+        "host",
+        "--ulimit",
+        "memlock=-1",
+        "--env-file",
+        ".devcontainer/devcontainer.env"
+    ]
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from gymnasium import Env
 from minigrid.wrappers import *
 from mini_behavior.window import Window
 from mini_behavior.utils.save import get_step, save_demo
@@ -10,7 +11,8 @@ import numpy as np
 # Size in pixels of a tile in the full-scale human view
 TILE_PIXELS = 32
 show_furniture = False
-
+env: Env
+window: Window
 
 def redraw(img):
     if not args.agent_view:
@@ -61,7 +63,8 @@ def reset():
         print('Mission: %s' % env.mission)
         window.set_caption(env.mission)
 
-    redraw(obs)
+    image, _ = obs
+    redraw(image)
 
 
 def load():
@@ -146,6 +149,7 @@ def key_handler_cartesian(event):
         switch_dim(2)
         return
 
+
 def key_handler_primitive(event):
     print('pressed', event.key)
     if event.key == 'escape':
@@ -222,13 +226,13 @@ parser.add_argument(
 parser.add_argument(
     '--agent_view',
     default=False,
-    help="draw the agent sees (partially observable view)",
+    help="Draw what the agent sees (partially observable view)",
     action='store_true'
 )
 # NEW
 parser.add_argument(
     "--save",
-    default=False,
+    action='store_true',
     help="whether or not to save the demo_16"
 )
 # NEW
@@ -240,28 +244,34 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-env = gym.make(args.env)
-env.teleop_mode()
-if args.save:
-    # We do not support save for cartesian action space
-    assert env.mode == "primitive"
+def main():
+    global env, window, args, all_steps
+    env = gym.make(args.env)
+    env.teleop_mode()
+    if args.save:
+        # We do not support save for cartesian action space
+        assert env.mode == "primitive"
 
-all_steps = {}
+    all_steps = {}
 
-if args.agent_view:
-    env = RGBImgPartialObsWrapper(env)
-    env = ImgObsWrapper(env)
+    if args.agent_view:
+        env = RGBImgPartialObsWrapper(env)
+        env = ImgObsWrapper(env)
 
-window = Window('mini_behavior - ' + args.env)
-if env.mode == "cartesian":
-    window.reg_key_handler(key_handler_cartesian)
-elif env.mode == "primitive":
-    window.reg_key_handler(key_handler_primitive)
+    window = Window('mini_behavior - ' + args.env)
+    if env.mode == "cartesian":
+        window.reg_key_handler(key_handler_cartesian)
+    elif env.mode == "primitive":
+        window.reg_key_handler(key_handler_primitive)
 
-if args.load is None:
-    reset()
-else:
-    load()
+    if args.load is None:
+        reset()
+    else:
+        load()
 
-# Blocking event loop
-window.show(block=True)
+    # Blocking event loop
+    window.show(block=True)
+
+
+if __name__ == "__main__":
+    main()
