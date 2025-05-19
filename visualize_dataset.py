@@ -68,21 +68,18 @@ def main():
     num_items = len(items)
 
     # Control buttons
-    prev_disabled = st.session_state.index <= 0
-    next_disabled = st.session_state.index >= num_items - 1
-
     col_prev, col_next, col_counter, col_goto = st.columns(4)
 
     with col_prev:
-        if st.button("⬅ Previous", disabled=prev_disabled):
-            st.session_state.index -= 1
+        if st.button("⬅ Previous", disabled=st.session_state.index <= 0):
+            st.session_state.index = max(0, st.session_state.index - 1)
 
     with col_next:
-        if st.button("Next ➡", disabled=next_disabled):
-            st.session_state.index += 1
+        if st.button("Next ➡", disabled=st.session_state.index >= num_items - 1):
+            st.session_state.index = min(num_items - 1, st.session_state.index + 1)
 
     with col_counter:
-        st.write(f"Item {st.session_state.index + 1} / {num_items}")
+        st.write(f"Item: {st.session_state.index + 1} / {num_items}")
 
     with col_goto:
         # “Go to” control – updates index first, counter is shown afterwards

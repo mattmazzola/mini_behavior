@@ -1,4 +1,3 @@
-
 from enum import IntEnum, auto
 
 import numpy as np
@@ -56,6 +55,40 @@ def get_flattened_grid_by_composition(
     return flat_grid
 
 
+def get_total_actions(path: List[Tuple[int, int]]) -> int:
+    """
+    Calculate the total number of actions (movements + rotations) needed for a path.
+    
+    Args:
+        path: A list of coordinates representing a path
+        
+    Returns:
+        int: The total number of actions (movements + rotations)
+    """
+    if len(path) <= 1:
+        return 0
+    
+    # Get the basic directions without incorporating rotations yet
+    coord_pairs = get_pairs(path)
+    basic_directions = [get_direction(pair[0], pair[1])
+                  for pair in coord_pairs]
+    
+    # Count movements (always equal to len(basic_directions))
+    movement_count = len(basic_directions)
+    
+    # Count rotations
+    rotation_count = 0
+    current_dir = basic_directions[0]
+    
+    for next_dir in basic_directions[1:]:
+        rotation = get_rotations_between_directions(current_dir, next_dir)
+        if rotation:
+            rotation_count += 1
+        current_dir = next_dir
+    
+    return movement_count + rotation_count
+
+
 def find_paths(
     grid: list[list[int]],
     start: tuple[int, int],
@@ -64,6 +97,7 @@ def find_paths(
 ):
     """
     Find all **shortest** paths from start to end in a grid, avoiding cells with a specific value.
+    The paths are optimized for the minimum number of actions (movements + rotations).
 
     Args:
         grid (list[list[int]]): The grid to search, given as list of rows, where each row is a list of integers.
@@ -72,7 +106,7 @@ def find_paths(
         empty_cell_value (int): The value of cells that can be traversed.
 
     Returns:
-        list[list[tuple[int, int]]]: A list of paths, where each path is a list of coordinates.
+        list[list[tuple[int, int]]]: A list of paths with minimum number of actions, where each path is a list of coordinates.
     """
 
     def is_valid_move(row: int, col: int) -> bool:
@@ -122,7 +156,14 @@ def find_paths(
     # Convert to int
     col_row_int_paths = [[(int(col), int(row))
                           for col, row in path] for path in col_row_paths]
-
+    
+    # Filter paths based on minimum number of actions (movements + rotations)
+    if col_row_int_paths:
+        action_counts = [get_total_actions(path) for path in col_row_int_paths]
+        min_actions = min(action_counts)
+        optimized_paths = [path for path, count in zip(col_row_int_paths, action_counts) if count == min_actions]
+        return optimized_paths
+    
     return col_row_int_paths
 
 
@@ -186,46 +227,109 @@ def get_pairs(items: Sequence[T]) -> List[List[T]]:
     return [[items[i], items[i+1]] for i in range(len(items) - 1)]
 
 
-def get_directions(coordinates: List[Union[Tuple[int, int], List[int]]], use_cardinal: bool = False) -> List[str]:
+def get_rotations_between_directions(prev_dir: str, next_dir: str) -> str:
+    """
+    Determine the rotation (CW or CCW) needed to go from one direction to another.
+    
+    Args:
+        prev_dir: The previous direction ("up", "right", "down", "left")
+        next_dir: The next direction ("up", "right", "down", "left")
+        
+    Returns:
+        Rotation direction ("CW" or "CCW") or None if no rotation needed
+    """
+    dir_to_idx = {"up": 0, "right": 1, "down": 2, "left": 3}
+    
+    if prev_dir == next_dir:
+        return None
+    
+    prev_idx = dir_to_idx[prev_dir]
+    next_idx = dir_to_idx[next_dir]
+    
+    # Calculate the shortest rotation
+    diff = (next_idx - prev_idx) % 4
+    
+    if diff == 1:  # Clockwise 90 degrees
+        return "CW"
+    elif diff == 3:  # Counter-clockwise 90 degrees
+        return "CCW"
+    elif diff == 2:  # 180 degrees - can be either CW or CCW
+        # Choose CW arbitrarily for 180-degree rotations
+        return "CW"
+    
+    return None
+
+def get_directions(coordinates: List[Union[Tuple[int, int], List[int]]], use_cardinal: bool = False, include_rotations: bool = True) -> List[str]:
     """
     Takes a list of coordinates and returns a list of directions between adjacent coordinates.
+    If include_rotations is True, it will include CW or CCW rotation directions when needed.
 
     Args:
         coordinates: A list of coordinate tuples [(row1, col1), (row2, col2), ...]
         use_cardinal: If True, returns cardinal directions
+        include_rotations: If True, includes rotation directions (CW, CCW)
 
     Returns:
         A list of direction strings
-        Spatial ["up", "down", "left", "right"]
-        Cardinal ["north", "south", "east", "west"]
+        Spatial ["up", "down", "left", "right"] and potentially ["CW", "CCW"]
+        Cardinal ["north", "south", "east", "west"] and potentially ["CW", "CCW"]
     """
     # Get pairs of adjacent coordinates
     coord_pairs = get_pairs(coordinates)
 
     # Determine direction for each pair
-    directions = [get_direction(pair[0], pair[1], use_cardinal)
+    basic_directions = [get_direction(pair[0], pair[1], use_cardinal)
                   for pair in coord_pairs]
+    
+    if not include_rotations or len(basic_directions) <= 1:
+        return basic_directions
+    
+    # Include rotations between directions
+    final_directions = []
+    current_dir = basic_directions[0]
+    final_directions.append(current_dir)
+    
+    for next_dir in basic_directions[1:]:
+        rotation = get_rotations_between_directions(current_dir, next_dir)
+        if rotation:
+            final_directions.append(rotation)
+        final_directions.append(next_dir)
+        current_dir = next_dir
+    
+    return final_directions
 
-    return directions
 
-
-def get_actions(directions: list[str], verbs: list[str] = ["go", "move"]) -> list[str]:
+def get_actions(directions: list[str], 
+               movement_verbs: list[str] = ["go", "move"],
+               rotation_verbs: list[str] = ["turn", "rotate"]) -> list[str]:
     """
-    Generate action strings by randomly prefixing each direction with a verb.
+    Generate action strings by prefixing each direction with an appropriate verb.
+    For movement directions (up, down, left, right), use movement verbs.
+    For rotation directions (CW, CCW), use rotation verbs and convert to right/left.
 
     Args:
-        directions: List of direction strings (e.g., "up", "down", "left", "right")
-        verbs: List of verb strings to use as prefixes (default: ["go", "move"])
+        directions: List of direction strings (e.g., "up", "down", "left", "right", "CW", "CCW")
+        movement_verbs: List of verb strings to use for movement directions (default: ["go", "move"])
+        rotation_verbs: List of verb strings to use for rotation directions (default: ["turn", "rotate"])
 
     Returns:
-        List of action strings in the format "{verb} {direction}"
+        List of action strings with appropriate format based on direction type
     """
-
     actions = []
     for direction in directions:
-        verb = random.choice(verbs)
-        actions.append(f"{verb} {direction}")
-
+        if direction in ["up", "down", "left", "right", "north", "south", "east", "west"]:
+            # Regular movement direction
+            verb = random.choice(movement_verbs)
+            actions.append(f"{verb} {direction}")
+        elif direction == "CW":
+            # Clockwise rotation - use "right"
+            verb = random.choice(rotation_verbs)
+            actions.append(f"{verb} right")
+        elif direction == "CCW":
+            # Counter-clockwise rotation - use "left"
+            verb = random.choice(rotation_verbs)
+            actions.append(f"{verb} left")
+    
     return actions
 
 
