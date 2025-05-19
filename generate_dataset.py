@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 from datetime import datetime
 import json
@@ -13,7 +11,6 @@ from mini_behavior.utils.save import save_demo
 from mini_behavior.grid import GridDimension
 import numpy as np
 import cv2
-from enum import IntEnum, auto
 
 # Size in pixels of a tile in the full-scale human view
 TILE_PIXELS = 32
@@ -410,7 +407,7 @@ def create_data_item():
     # Process each path to generate corresponding directions and actions
     paths_with_instructions = []
     for path in agent_to_printer_paths:
-        directions = get_directions(path)
+        directions = get_directions(path, agent_dx_dy=agent_dx_dy)
         actions = get_actions(directions)
         paths_with_instructions.append({
             "coordinates": path,

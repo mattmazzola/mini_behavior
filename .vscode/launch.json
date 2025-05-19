@@ -98,7 +98,7 @@
                 "run",
                 "visualize_dataset.py",
                 "--",
-                "datasets/installaprinter_20250519_191924/dataset.jsonl",
+                "datasets/installaprinter_20250519_210624/dataset.jsonl",
             ]
         },
     ]

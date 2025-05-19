@@ -81,9 +81,8 @@ def get_total_actions(path: List[Tuple[int, int]]) -> int:
     current_dir = basic_directions[0]
     
     for next_dir in basic_directions[1:]:
-        rotation = get_rotations_between_directions(current_dir, next_dir)
-        if rotation:
-            rotation_count += 1
+        rotations = get_rotations_between_directions(current_dir, next_dir)
+        rotation_count += len(rotations)
         current_dir = next_dir
     
     return movement_count + rotation_count
@@ -227,21 +226,21 @@ def get_pairs(items: Sequence[T]) -> List[List[T]]:
     return [[items[i], items[i+1]] for i in range(len(items) - 1)]
 
 
-def get_rotations_between_directions(prev_dir: str, next_dir: str) -> str:
+def get_rotations_between_directions(prev_dir: str, next_dir: str) -> List[str]:
     """
-    Determine the rotation (CW or CCW) needed to go from one direction to another.
+    Determine the rotation(s) needed to go from one direction to another.
     
     Args:
         prev_dir: The previous direction ("up", "right", "down", "left")
         next_dir: The next direction ("up", "right", "down", "left")
         
     Returns:
-        Rotation direction ("CW" or "CCW") or None if no rotation needed
+        List of rotation directions ("CW", "CCW") or empty list if no rotation needed
     """
     dir_to_idx = {"up": 0, "right": 1, "down": 2, "left": 3}
     
     if prev_dir == next_dir:
-        return None
+        return []
     
     prev_idx = dir_to_idx[prev_dir]
     next_idx = dir_to_idx[next_dir]
@@ -250,24 +249,51 @@ def get_rotations_between_directions(prev_dir: str, next_dir: str) -> str:
     diff = (next_idx - prev_idx) % 4
     
     if diff == 1:  # Clockwise 90 degrees
-        return "CW"
+        return ["CW"]
     elif diff == 3:  # Counter-clockwise 90 degrees
-        return "CCW"
-    elif diff == 2:  # 180 degrees - can be either CW or CCW
-        # Choose CW arbitrarily for 180-degree rotations
-        return "CW"
+        return ["CCW"]
+    elif diff == 2:  # 180 degrees - requires two 90-degree rotations
+        # Use two CW rotations for 180-degree rotations
+        return ["CW", "CW"]
     
-    return None
+    return []
 
-def get_directions(coordinates: List[Union[Tuple[int, int], List[int]]], use_cardinal: bool = False, include_rotations: bool = True) -> List[str]:
+def dx_dy_to_direction(dx_dy: List[int]) -> str:
+    """
+    Convert an agent's direction vector to a cardinal direction string.
+    
+    Args:
+        dx_dy: The direction vector [dx, dy] where dx and dy are either 0, 1, or -1
+        
+    Returns:
+        A direction string ('up', 'down', 'left', 'right')
+    """
+    dx, dy = dx_dy
+    
+    if dx == 1 and dy == 0:  # Facing right
+        return 'right'
+    elif dx == 0 and dy == 1:  # Facing down
+        return 'down'  
+    elif dx == -1 and dy == 0:  # Facing left
+        return 'left'
+    elif dx == 0 and dy == -1:  # Facing up
+        return 'up'
+    else:
+        raise ValueError(f"Invalid direction vector: {dx_dy}. Expected [dx, dy] where each is 0, 1, or -1.")
+
+
+def get_directions(coordinates: List[Union[Tuple[int, int], List[int]]], use_cardinal: bool = False, 
+                   include_rotations: bool = True, agent_dx_dy: List[int] = None) -> List[str]:
     """
     Takes a list of coordinates and returns a list of directions between adjacent coordinates.
     If include_rotations is True, it will include CW or CCW rotation directions when needed.
+    If agent_dx_dy is provided, it will include initial rotation to align with the first direction.
 
     Args:
         coordinates: A list of coordinate tuples [(row1, col1), (row2, col2), ...]
         use_cardinal: If True, returns cardinal directions
         include_rotations: If True, includes rotation directions (CW, CCW)
+        agent_dx_dy: The agent's initial direction vector [dx, dy], if available
 
     Returns:
         A list of direction strings
@@ -286,13 +312,28 @@ def get_directions(coordinates: List[Union[Tuple[int, int], List[int]]], use_car
     
     # Include rotations between directions
     final_directions = []
+    
+    # Check if we need an initial rotation based on agent's starting direction
+    if agent_dx_dy is not None and len(basic_directions) > 0:
+        try:
+            initial_dir = dx_dy_to_direction(agent_dx_dy)
+            first_move_dir = basic_directions[0]
+            
+            # Add initial rotation(s) if needed
+            initial_rotations = get_rotations_between_directions(initial_dir, first_move_dir)
+            final_directions.extend(initial_rotations)
+        except ValueError:
+            # If there's an issue with the direction vector, just ignore it
+            pass
+    
+    # Add the first direction
     current_dir = basic_directions[0]
     final_directions.append(current_dir)
     
+    # Add remaining directions with rotations as needed
     for next_dir in basic_directions[1:]:
-        rotation = get_rotations_between_directions(current_dir, next_dir)
-        if rotation:
-            final_directions.append(rotation)
+        rotations = get_rotations_between_directions(current_dir, next_dir)
+        final_directions.extend(rotations)
         final_directions.append(next_dir)
         current_dir = next_dir
     
