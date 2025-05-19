@@ -80,7 +80,7 @@ export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
 ```sh
 azcopy copy \
 --recursive \
-datasets/installaprinter_20250519_164901 \
-https://magmardata.blob.core.windows.net/data/minibehavior/installaprinter \
+"datasets/installaprinter_20250519_220553/*" \
+https://magmardata.blob.core.windows.net/data/minibehavior/installaprinter/installaprinter_20250519_220553_with_rotations \
 --dry-run
 ```

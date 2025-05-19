@@ -2,7 +2,6 @@ import argparse
 from datetime import datetime
 import json
 from pathlib import Path
-from time import sleep
 from gymnasium import Env
 from minigrid.wrappers import *
 from helpers import CellType, find_paths, get_actions, get_directions, get_flattened_grid_by_composition
@@ -178,6 +177,7 @@ def save_image(
 
 def get_agent_to_printer_paths(
     grid: list[list[int]],
+    agent_dx_dy: list[int] = None
 ):
     # Make copy of the grid to avoid modifying the original
     grid_copy = np.copy(grid)
@@ -202,6 +202,7 @@ def get_agent_to_printer_paths(
         start=agent_col_row,
         end=printer_col_row,
         empty_cell_value=CellType.Empty.value,
+        initial_direction=agent_dx_dy
     )
 
     return shortest_paths
@@ -402,12 +403,13 @@ def create_data_item():
     )
     agent_to_printer_paths = get_agent_to_printer_paths(
         grid=flattened_grid,
+        agent_dx_dy=agent_dx_dy
     )
 
     # Process each path to generate corresponding directions and actions
     paths_with_instructions = []
     for path in agent_to_printer_paths:
-        directions = get_directions(path, agent_dx_dy=agent_dx_dy)
+        directions = get_directions(path, initial_direction=agent_dx_dy)
         actions = get_actions(directions)
         paths_with_instructions.append({
             "coordinates": path,
