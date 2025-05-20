@@ -14,7 +14,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}-
+            ${{ runner.os }}-python-
 
       - name: Install uv
         run: |
