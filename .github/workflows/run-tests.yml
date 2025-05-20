@@ -21,10 +21,10 @@ jobs:
           path: |
             ~/.cache/uv
             .venv
-          key: ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+          key: ${{ runner.os }}-python-pyproject-${{ hashFiles('pyproject.toml') }}-uvlock-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-python-${{ hashFiles('pyproject.toml') }}-
-            ${{ runner.os }}-python-
+            ${{ runner.os }}-python-pyproject-${{ hashFiles('pyproject.toml') }}
+            ${{ runner.os }}-python
 
       - name: Install uv
         run: |
