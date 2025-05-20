@@ -148,13 +148,13 @@ def test_get_directions_with_initial_rotation():
     coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
     
     # Agent initially facing up, needs to turn right to face right
-    assert get_directions(coords, agent_dx_dy=[0, -1]) == ["CW", "right", "CW", "down", "CW", "left"]
+    assert get_directions(coords, initial_direction=[0, -1]) == ["CW", "right", "CW", "down", "CW", "left"]
     
     # Agent initially facing right, no initial rotation needed
-    assert get_directions(coords, agent_dx_dy=[1, 0]) == ["right", "CW", "down", "CW", "left"]
+    assert get_directions(coords, initial_direction=[1, 0]) == ["right", "CW", "down", "CW", "left"]
     
     # Agent initially facing down, needs to turn left to face right
-    assert get_directions(coords, agent_dx_dy=[0, 1]) == ["CCW", "right", "CW", "down", "CW", "left"]
+    assert get_directions(coords, initial_direction=[0, 1]) == ["CCW", "right", "CW", "down", "CW", "left"]
     
     # Agent initially facing left, needs to turn 180 degrees (two CWs) to face right
-    assert get_directions(coords, agent_dx_dy=[-1, 0]) == ["CW", "CW", "right", "CW", "down", "CW", "left"]
+    assert get_directions(coords, initial_direction=[-1, 0]) == ["CW", "CW", "right", "CW", "down", "CW", "left"]

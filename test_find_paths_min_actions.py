@@ -119,6 +119,6 @@ def test_find_paths_with_initial_rotation():
         paths_no_direction) == 2, "Two paths should be found without agent direction"
 
     paths_agent_facing_right = find_paths(
-        grid, start, end, empty_cell_value=0, agent_dx_dy=[1, 0])
+        grid, start, end, empty_cell_value=0, initial_direction=[1, 0])
     assert len(
         paths_agent_facing_right) == 1, "Only one path should be found with agent facing right"

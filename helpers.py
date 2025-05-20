@@ -55,62 +55,26 @@ def get_flattened_grid_by_composition(
     return flat_grid
 
 
-def get_total_actions(path: List[Tuple[int, int]]) -> int:
-    """
-    Calculate the total number of actions (movements + rotations) needed for a path.
-
-    Args:
-        path: A list of coordinates representing a path
-
-    Returns:
-        int: The total number of actions (movements + rotations)
-    """
-    if len(path) <= 1:
-        return 0
-
-    # Get the basic directions without incorporating rotations yet
-    coord_pairs = get_pairs(path)
-    basic_directions = [get_direction(pair[0], pair[1])
-                        for pair in coord_pairs]
-
-    # Count movements (always equal to len(basic_directions))
-    movement_count = len(basic_directions)
-
-    # Count rotations
-    rotation_count = 0
-    current_dir = basic_directions[0]
-
-    for next_dir in basic_directions[1:]:
-        rotations = get_rotations_between_directions(current_dir, next_dir)
-        rotation_count += len(rotations)
-        current_dir = next_dir
-
-    return movement_count + rotation_count
-
-
-def find_paths(
+def find_shortest_paths(
     grid: list[list[int]],
     start: tuple[int, int],
     end: tuple[int, int],
     empty_cell_value: int,
-    initial_direction: List[int] = None,
-):
+) -> list[list[tuple[int, int]]]:
     """
-    Find all **shortest** paths from start to end in a grid, avoiding cells with a specific value.
-    The paths are optimized for the minimum number of actions (movements + rotations), including initial rotations.
+    Find all shortest paths from start to end in a grid, avoiding cells with a specific value.
+    This function only considers the number of steps, not rotations.
 
     Args:
         grid (list[list[int]]): The grid to search, given as list of rows, where each row is a list of integers.
         start (tuple[int, int]): The starting coordinates (col, row).
         end (tuple[int, int]): The ending coordinates (col, row).
         empty_cell_value (int): The value of cells that can be traversed.
-        initial_direction (List[int], optional): The initial direction vector [dx, dy]. If provided, 
-                                          considers initial rotations in path optimization.
 
     Returns:
-        list[list[tuple[int, int]]]: A list of paths with minimum number of actions, where each path is a list of coordinates.
+        list[list[tuple[int, int]]]: A list of paths with minimum number of steps, where each path is a list of coordinates.
     """
-
+    
     def is_valid_move(row: int, col: int) -> bool:
         return 0 <= row < len(grid) and 0 <= col < len(grid[0]) and grid[row][col] == empty_cell_value
 
@@ -130,7 +94,6 @@ def find_paths(
             # If the path is equal to the shortest paths, add it to the list
             if len(path) == shortest_path_length:
                 row_col_paths.append(path.copy())
-
             return
 
         visited.add((row, col))
@@ -157,71 +120,134 @@ def find_paths(
 
     # Convert to int
     col_row_int_paths = [[(int(col), int(row))
-                          for col, row in path] for path in col_row_paths]
-
-    # Filter paths based on minimum number of actions (movements + rotations)
-    if col_row_int_paths:
-        # If initial direction is provided, include initial rotation cost in optimization
-        if initial_direction is not None:
-            try:
-                # Calculate the total actions including initial rotations for each path
-                action_counts = []
-                # Track initial rotations separately for better optimization
-                initial_rotation_counts = []
-
-                for path in col_row_int_paths:
-                    # Basic path actions without initial rotation
-                    path_actions = get_total_actions(path)
-
-                    # Count initial rotations if path has at least two points
-                    initial_rotations_count = 0
-                    if len(path) >= 2:
-                        # Get the first direction in the path
-                        first_direction = get_direction(path[0], path[1])
-                        # Get starting direction
-                        start_direction = dx_dy_to_direction(initial_direction)
-                        # Get the rotations needed
-                        initial_rotations = get_rotations_between_directions(
-                            start_direction, first_direction)
-                        initial_rotations_count = len(initial_rotations)
-                        # Add rotation cost
-                        path_actions += initial_rotations_count
-
-                    action_counts.append(path_actions)
-                    initial_rotation_counts.append(initial_rotations_count)
-
-                # First priority: minimize total actions
-                min_actions = min(action_counts)
-                # Get all paths with minimum total actions
-                min_action_indices = [i for i, count in enumerate(
-                    action_counts) if count == min_actions]
-
-                # Second priority: among paths with minimum actions, prefer those with fewer initial rotations
-                min_initial_rotations = min(
-                    initial_rotation_counts[i] for i in min_action_indices)
-                min_rotation_indices = [
-                    i for i in min_action_indices if initial_rotation_counts[i] == min_initial_rotations]
-
-                # Return optimized paths
-                optimized_paths = [col_row_int_paths[i]
-                                   for i in min_rotation_indices]
-                return optimized_paths
-
-            except ValueError:
-                # Fall back to regular path optimization if there's an issue with direction vectors
-                action_counts = [get_total_actions(
-                    path) for path in col_row_int_paths]
-        else:
-            # Regular path optimization without considering initial rotation
-            action_counts = [get_total_actions(
-                path) for path in col_row_int_paths]
-
-        min_actions = min(action_counts)
-        optimized_paths = [path for path, count in zip(
-            col_row_int_paths, action_counts) if count == min_actions]
-        return optimized_paths
-
+                         for col, row in path] for path in col_row_paths]
+                         
     return col_row_int_paths
+
+def get_total_actions(
+    path: List[Tuple[int, int]],
+    initial_direction: List[int] = None,
+) -> int:
+    """
+    Calculate the total number of actions (movements + rotations) needed for a path.
+
+    Args:
+        path: A list of coordinates representing a path
+        initial_direction: The initial direction vector [dx, dy], if available
+
+    Returns:
+        int: The total number of actions (movements + rotations)
+    """
+    if len(path) <= 1:
+        return 0
+
+    # Get the basic directions without incorporating rotations yet
+    coord_pairs = get_pairs(path)
+    basic_directions = [get_direction(pair[0], pair[1])
+                        for pair in coord_pairs]
+
+    # Count movements (always equal to len(basic_directions))
+    movement_count = len(basic_directions)
+
+    # Calculate all directions including rotations
+    all_directions = calculate_directions_with_rotations(basic_directions, initial_direction)
+    
+    # Count rotations (all directions minus movement directions)
+    rotation_count = len(all_directions) - movement_count
+
+    return movement_count + rotation_count
+
+
+def optimize_paths_with_rotations(
+    paths: List[List[Tuple[int, int]]],
+    initial_direction: List[int] = None
+) -> List[List[Tuple[int, int]]]:
+    """
+    Filter paths based on the minimum number of actions (movements + rotations).
+
+    Args:
+        paths: A list of paths, where each path is a list of coordinates (col, row).
+        initial_direction: The initial direction vector [dx, dy], if provided.
+
+    Returns:
+        A list of paths optimized for minimum total actions (movements + rotations).
+    """
+    if not paths:
+        return []
+
+    try:
+        # Calculate total actions for each path, including initial direction if provided
+        action_counts = [get_total_actions(path, initial_direction) for path in paths]
+        
+        # If there's an initial direction, we also want to prioritize paths with fewer initial rotations
+        if initial_direction is not None:
+            # Get indices of paths with minimum total actions
+            min_actions = min(action_counts)
+            min_action_indices = [i for i, count in enumerate(action_counts) if count == min_actions]
+            
+            # Calculate initial rotations count for each path in the min actions set
+            initial_rotation_counts = []
+            for i in min_action_indices:
+                path = paths[i]
+                if len(path) >= 2:
+                    # Get the first direction in the path
+                    first_direction = get_direction(path[0], path[1])
+                    # Get starting direction
+                    start_direction = dx_dy_to_direction(initial_direction)
+                    # Get the rotations needed
+                    initial_rotations = get_rotations_between_directions(
+                        start_direction, first_direction)
+                    initial_rotation_counts.append(len(initial_rotations))
+                else:
+                    initial_rotation_counts.append(0)
+            
+            # Find paths with minimum initial rotations among those with minimum total actions
+            min_initial_rotations = min(initial_rotation_counts)
+            final_indices = [min_action_indices[j] for j, count in enumerate(initial_rotation_counts) 
+                            if count == min_initial_rotations]
+            
+            # Return the optimized paths
+            return [paths[i] for i in final_indices]
+    
+    except ValueError:
+        # Fall back to simpler optimization if there's an error
+        action_counts = [len(path) - 1 for path in paths]  # Just count moves
+    
+    # Standard optimization when no initial direction or after exception
+    min_actions = min(action_counts) if action_counts else 0
+    optimized_paths = [path for path, count in zip(paths, action_counts) if count == min_actions]
+    return optimized_paths
+
+
+def find_paths(
+    grid: list[list[int]],
+    start: tuple[int, int],
+    end: tuple[int, int],
+    empty_cell_value: int,
+    initial_direction: List[int] = None,
+) -> list[list[tuple[int, int]]]:
+    """
+    Find all **shortest** paths from start to end in a grid, avoiding cells with a specific value.
+    The paths are optimized for the minimum number of actions (movements + rotations), including initial rotations.
+
+    Args:
+        grid (list[list[int]]): The grid to search, given as list of rows, where each row is a list of integers.
+        start (tuple[int, int]): The starting coordinates (col, row).
+        end (tuple[int, int]): The ending coordinates (col, row).
+        empty_cell_value (int): The value of cells that can be traversed.
+        initial_direction (List[int], optional): The initial direction vector [dx, dy]. If provided, 
+                                          considers initial rotations in path optimization.
+
+    Returns:
+        list[list[tuple[int, int]]]: A list of paths with minimum number of actions, where each path is a list of coordinates.
+    """
+    # First find all shortest paths without considering rotations
+    shortest_paths = find_shortest_paths(grid, start, end, empty_cell_value)
+    
+    # Then optimize paths based on rotations
+    optimized_paths = optimize_paths_with_rotations(shortest_paths, initial_direction)
+    
+    return optimized_paths
 
 
 def get_direction(
@@ -342,6 +368,53 @@ def dx_dy_to_direction(dx_dy: List[int]) -> str:
             f"Invalid direction vector: {dx_dy}. Expected [dx, dy] where each is 0, 1, or -1.")
 
 
+def calculate_directions_with_rotations(
+    basic_directions: List[str],
+    initial_direction: List[int] = None,
+) -> List[str]:
+    """
+    Convert a list of basic movement directions to a full sequence including rotations.
+
+    Args:
+        basic_directions: A list of basic movement directions (e.g., ['up', 'right', 'down'])
+        initial_direction: The initial direction vector [dx, dy], if available
+
+    Returns:
+        A list of direction strings including necessary rotations
+    """
+    if len(basic_directions) <= 1:
+        return basic_directions
+
+    final_directions = []
+
+    # Check if we need an initial rotation based on starting direction
+    if initial_direction is not None:
+        try:
+            initial_dir = dx_dy_to_direction(initial_direction)
+            first_move_dir = basic_directions[0]
+
+            # Add initial rotation(s) if needed
+            initial_rotations = get_rotations_between_directions(
+                initial_dir, first_move_dir)
+            final_directions.extend(initial_rotations)
+        except ValueError:
+            # If there's an issue with the direction vector, just ignore it
+            pass
+
+    # Add the first direction
+    current_dir = basic_directions[0]
+    final_directions.append(current_dir)
+
+    # Add remaining directions with rotations as needed
+    for next_dir in basic_directions[1:]:
+        rotations = get_rotations_between_directions(current_dir, next_dir)
+        final_directions.extend(rotations)
+        final_directions.append(next_dir)
+        current_dir = next_dir
+
+    return final_directions
+
+
 def get_directions(
     coordinates: List[Union[Tuple[int, int], List[int]]],
     use_cardinal: bool = False,
@@ -371,38 +444,11 @@ def get_directions(
     basic_directions = [get_direction(pair[0], pair[1], use_cardinal)
                         for pair in coord_pairs]
 
-    if not include_rotations or len(basic_directions) <= 1:
+    if not include_rotations:
         return basic_directions
 
-    # Include rotations between directions
-    final_directions = []
-
-    # Check if we need an initial rotation based on starting direction
-    if initial_direction is not None and len(basic_directions) > 0:
-        try:
-            initial_dir = dx_dy_to_direction(initial_direction)
-            first_move_dir = basic_directions[0]
-
-            # Add initial rotation(s) if needed
-            initial_rotations = get_rotations_between_directions(
-                initial_dir, first_move_dir)
-            final_directions.extend(initial_rotations)
-        except ValueError:
-            # If there's an issue with the direction vector, just ignore it
-            pass
-
-    # Add the first direction
-    current_dir = basic_directions[0]
-    final_directions.append(current_dir)
-
-    # Add remaining directions with rotations as needed
-    for next_dir in basic_directions[1:]:
-        rotations = get_rotations_between_directions(current_dir, next_dir)
-        final_directions.extend(rotations)
-        final_directions.append(next_dir)
-        current_dir = next_dir
-
-    return final_directions
+    # Add rotations to the directions if requested
+    return calculate_directions_with_rotations(basic_directions, initial_direction)
 
 
 def get_actions(
