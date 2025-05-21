@@ -12,3 +12,9 @@ dependencies = [
     "pytest>=8.3.5",
     "streamlit>=1.45.1",
 ]
+
+[tool.isort]
+line_length = 120
+
+[tool.ruff]
+line-length = 120
