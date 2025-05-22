@@ -3,6 +3,7 @@
 *egg-info
 trained_models
 .DS_Store
+.pytest*
 
 # PyPI
 build/*
